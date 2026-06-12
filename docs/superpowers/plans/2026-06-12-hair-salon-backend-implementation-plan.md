@@ -267,7 +267,7 @@ bootstrap();
 
 ```ts
 import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
-import { ZodSchema } from 'zod';
+import type { ZodSchema } from 'zod';
 import { AppErrorCode } from '../errors/app-error-code';
 
 @Injectable()
