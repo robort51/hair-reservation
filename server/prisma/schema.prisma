@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum AppointmentStatus {
+  PENDING
+  COMPLETED
+  CANCELED
+  EXPIRED
+}
+
+model ServiceCategory {
+  id        Int           @id @default(autoincrement())
+  name      String
+  sortOrder Int           @default(0)
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  services  ServiceItem[]
+}
+
+model ServiceItem {
+  id                 Int             @id @default(autoincrement())
+  categoryId         Int
+  name               String
+  description        String?
+  durationMinutes    Int
+  priceCents         Int
+  originalPriceCents Int?
+  sortOrder          Int             @default(0)
+  isActive           Boolean         @default(true)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  category           ServiceCategory @relation(fields: [categoryId], references: [id])
+  staffServices      StaffService[]
+  appointments       Appointment[]
+}
+
+model Staff {
+  id              Int                   @id @default(autoincrement())
+  name            String
+  title           String?
+  phone           String?
+  avatarUrl       String?
+  bio             String?
+  isActive        Boolean               @default(true)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  staffServices   StaffService[]
+  weeklySchedules StaffWeeklySchedule[]
+  timeOffs        StaffTimeOff[]
+  appointments    Appointment[]
+}
+
+model StaffService {
+  id            Int         @id @default(autoincrement())
+  staffId       Int
+  serviceItemId Int
+  sortOrder     Int         @default(0)
+  createdAt     DateTime    @default(now())
+  staff         Staff       @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  serviceItem   ServiceItem @relation(fields: [serviceItemId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, serviceItemId])
+}
+
+model StaffWeeklySchedule {
+  id        Int      @id @default(autoincrement())
+  staffId   Int
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  isWorking Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  staff     Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+}
+
+model StaffTimeOff {
+  id        Int      @id @default(autoincrement())
+  staffId   Int
+  startAt   DateTime
+  endAt     DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  staff     Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+}
+
+model Customer {
+  id           Int           @id @default(autoincrement())
+  wechatOpenId String?       @unique
+  name         String
+  phone        String        @unique
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  appointments Appointment[]
+}
+
+model Appointment {
+  id                             Int               @id @default(autoincrement())
+  customerId                     Int
+  serviceItemId                  Int
+  staffId                        Int
+  customerNameSnapshot           String
+  customerPhoneSnapshot          String
+  serviceNameSnapshot            String
+  serviceDurationMinutesSnapshot Int
+  servicePriceCentsSnapshot      Int
+  staffNameSnapshot              String
+  startAt                        DateTime
+  endAt                          DateTime
+  status                         AppointmentStatus @default(PENDING)
+  remark                         String?
+  cancelReason                   String?
+  createdAt                      DateTime          @default(now())
+  updatedAt                      DateTime          @updatedAt
+  customer                       Customer          @relation(fields: [customerId], references: [id])
+  serviceItem                    ServiceItem       @relation(fields: [serviceItemId], references: [id])
+  staff                          Staff             @relation(fields: [staffId], references: [id])
+
+  @@index([staffId, startAt, endAt])
+  @@index([customerId, createdAt])
+  @@index([status, startAt])
+}
