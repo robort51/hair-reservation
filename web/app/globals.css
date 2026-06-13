@@ -240,16 +240,19 @@ button {
   gap: 8px;
 }
 
-.nav-links a {
+.nav-links a,
+.nav-button {
   min-height: 36px;
   padding: 8px 12px;
   border: 1px solid transparent;
   border-radius: var(--radius);
   color: var(--ink-soft);
   font-size: 14px;
+  background: transparent;
 }
 
-.nav-links a:hover {
+.nav-links a:hover,
+.nav-button:hover {
   border-color: var(--line);
   color: var(--ink);
   background: rgba(255, 252, 246, 0.56);
@@ -909,6 +912,31 @@ button {
 
 .admin-shell {
   padding-bottom: 80px;
+}
+
+.admin-login-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+}
+
+.admin-login-shell {
+  display: grid;
+  width: min(460px, 100%);
+  gap: 22px;
+}
+
+.admin-login-panel {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
+.admin-login-panel h1 {
+  margin: 8px 0 0;
+  font-size: 42px;
+  font-weight: 500;
 }
 
 .admin-header {

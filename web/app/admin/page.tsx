@@ -1,5 +1,10 @@
 import { AdminAppointments } from '@/components/admin/AdminAppointments';
+import { AdminProtected } from '@/components/admin/AdminProtected';
 
 export default function AdminPage() {
-  return <AdminAppointments mode="today" />;
+  return (
+    <AdminProtected>
+      <AdminAppointments mode="today" />
+    </AdminProtected>
+  );
 }

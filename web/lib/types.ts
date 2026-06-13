@@ -8,6 +8,11 @@ export type ApiResponse<T> = {
   error: ApiError | null;
 };
 
+export type AdminLoginResponse = {
+  token: string;
+  username: string;
+};
+
 export type ServiceCategory = {
   id: number;
   name: string;

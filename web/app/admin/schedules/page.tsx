@@ -1,5 +1,10 @@
 import { SchedulesManager } from '@/components/admin/SchedulesManager';
+import { AdminProtected } from '@/components/admin/AdminProtected';
 
 export default function AdminSchedulesPage() {
-  return <SchedulesManager />;
+  return (
+    <AdminProtected>
+      <SchedulesManager />
+    </AdminProtected>
+  );
 }

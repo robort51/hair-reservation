@@ -19,6 +19,7 @@ describe('Appointments', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let server: Server;
+  let adminToken: string;
 
   const payload = {
     serviceItemId: 2,
@@ -64,6 +65,12 @@ describe('Appointments', () => {
     prisma = app.get<PrismaService>(PrismaService);
     const httpServer: unknown = app.getHttpServer();
     server = httpServer as Server;
+    const login = await request(server)
+      .post('/admin-auth/login')
+      .send({ username: 'YJMF', password: '123456' });
+    const loginBody = login.body as ApiResponse;
+    const loginData = loginBody.data as { token: string };
+    adminToken = loginData.token;
   });
 
   afterAll(async () => {
@@ -97,6 +104,36 @@ describe('Appointments', () => {
     const secondBody = second.body as ApiResponse;
     expect(second.status).toBe(409);
     expect(secondBody.error?.code).toBe('APPOINTMENT_CONFLICT');
+  });
+
+  it('后台登录成功后返回访问令牌', async () => {
+    const response = await request(server)
+      .post('/admin-auth/login')
+      .send({ username: 'YJMF', password: '123456' });
+    const body = response.body as ApiResponse;
+    const data = body.data as { token: string };
+
+    expect(response.status).toBe(201);
+    expect(body.error).toBeNull();
+    expect(data.token).toEqual(expect.any(String));
+  });
+
+  it('后台接口未登录不能访问', async () => {
+    const response = await request(server).get('/appointments');
+    const body = response.body as ApiResponse;
+
+    expect(response.status).toBe(401);
+    expect(body.error?.code).toBe('ADMIN_UNAUTHORIZED');
+  });
+
+  it('用户手机号查单接口不需要后台登录', async () => {
+    const response = await request(server)
+      .get('/appointments')
+      .query({ customerPhone: '13900000001' });
+    const body = response.body as ApiResponse;
+
+    expect(response.status).toBe(200);
+    expect(body.error).toBeNull();
   });
 
   it('不能创建早于当前时间的预约', async () => {
@@ -163,6 +200,7 @@ describe('Appointments', () => {
 
     const invalidCancel = await request(server)
       .patch(`/appointments/${appointment.id}/cancel`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({});
     const invalidBody = invalidCancel.body as ApiResponse;
 
@@ -173,6 +211,7 @@ describe('Appointments', () => {
     const cancelReason = '员工临时请假';
     const canceled = await request(server)
       .patch(`/appointments/${appointment.id}/cancel`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({ cancelReason });
 
     expect(canceled.status).toBe(200);
@@ -203,6 +242,7 @@ describe('Appointments', () => {
 
     const updated = await request(server)
       .put('/staff/1/services')
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({ services: servicePrices });
     const updatedBody = updated.body as ApiResponse;
     const staff = updatedBody.data as {

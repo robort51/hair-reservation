@@ -1,3 +1,7 @@
+'use client';
+
+import { clearAdminToken } from '@/lib/admin-auth';
+
 const adminLinks = [
   { href: '/admin', label: '今日预约' },
   { href: '/admin/appointments', label: '全部预约' },
@@ -7,6 +11,11 @@ const adminLinks = [
 ];
 
 export function AdminNav() {
+  function handleLogout() {
+    clearAdminToken();
+    window.location.href = '/admin/login';
+  }
+
   return (
     <nav className="topbar">
       <a className="brand-mark" href="/admin">
@@ -18,6 +27,9 @@ export function AdminNav() {
             {link.label}
           </a>
         ))}
+        <button className="nav-button" type="button" onClick={handleLogout}>
+          退出
+        </button>
       </div>
     </nav>
   );

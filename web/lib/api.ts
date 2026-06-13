@@ -1,4 +1,5 @@
 import type {
+  AdminLoginResponse,
   ApiResponse,
   Appointment,
   AvailabilityResponse,
@@ -12,6 +13,11 @@ import type {
   WeeklySchedule,
   WeeklySchedulePayload,
 } from './types';
+import {
+  clearAdminToken,
+  getAdminToken,
+  redirectToAdminLogin,
+} from './admin-auth';
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '') ??
@@ -26,13 +32,19 @@ class ApiRequestError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  options?: { admin?: boolean },
+): Promise<T> {
+  const token = options?.admin ? getAdminToken() : null;
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
       headers: {
         'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...init?.headers,
       },
     });
@@ -42,6 +54,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   const payload = (await response.json()) as ApiResponse<T>;
   if (!response.ok || payload.error) {
+    if (payload.error?.code === 'ADMIN_UNAUTHORIZED') {
+      clearAdminToken();
+      redirectToAdminLogin();
+    }
     throw new ApiRequestError(
       payload.error?.message ?? '请求失败，请稍后再试',
       payload.error?.code,
@@ -56,6 +72,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  adminLogin(payload: { username: string; password: string }) {
+    return request<AdminLoginResponse>('/admin-auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
   listServiceCategories() {
     return request<ServiceCategory[]>('/service-categories');
   },
@@ -68,21 +91,21 @@ export const api = {
     return request<ServiceItem>('/service-items', {
       method: 'POST',
       body: JSON.stringify(payload),
-    });
+    }, { admin: true });
   },
 
   updateServiceItem(id: number, payload: Partial<ServiceItemPayload>) {
     return request<ServiceItem>(`/service-items/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
-    });
+    }, { admin: true });
   },
 
   updateServiceItemStatus(id: number, isActive: boolean) {
     return request<ServiceItem>(`/service-items/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ isActive }),
-    });
+    }, { admin: true });
   },
 
   listStaff() {
@@ -93,21 +116,21 @@ export const api = {
     return request<Staff>('/staff', {
       method: 'POST',
       body: JSON.stringify(payload),
-    });
+    }, { admin: true });
   },
 
   updateStaff(id: number, payload: Partial<StaffPayload>) {
     return request<Staff>(`/staff/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
-    });
+    }, { admin: true });
   },
 
   updateStaffStatus(id: number, isActive: boolean) {
     return request<Staff>(`/staff/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ isActive }),
-    });
+    }, { admin: true });
   },
 
   replaceStaffServices(
@@ -117,18 +140,22 @@ export const api = {
     return request<Staff>(`/staff/${staffId}/services`, {
       method: 'PUT',
       body: JSON.stringify({ services }),
-    });
+    }, { admin: true });
   },
 
   listWeeklySchedules(staffId: number) {
-    return request<WeeklySchedule[]>(`/staff/${staffId}/weekly-schedules`);
+    return request<WeeklySchedule[]>(
+      `/staff/${staffId}/weekly-schedules`,
+      undefined,
+      { admin: true },
+    );
   },
 
   replaceWeeklySchedules(staffId: number, payload: WeeklySchedulePayload) {
     return request<WeeklySchedule[]>(`/staff/${staffId}/weekly-schedules`, {
       method: 'PUT',
       body: JSON.stringify(payload),
-    });
+    }, { admin: true });
   },
 
   getAvailability(params: {
@@ -154,7 +181,7 @@ export const api = {
   },
 
   listAppointments() {
-    return request<Appointment[]>('/appointments');
+    return request<Appointment[]>('/appointments', undefined, { admin: true });
   },
 
   listAppointmentsByPhone(customerPhone: string) {
@@ -165,14 +192,14 @@ export const api = {
   completeAppointment(id: number) {
     return request<Appointment>(`/appointments/${id}/complete`, {
       method: 'PATCH',
-    });
+    }, { admin: true });
   },
 
   cancelAppointment(id: number, cancelReason?: string) {
     return request<Appointment>(`/appointments/${id}/cancel`, {
       method: 'PATCH',
       body: JSON.stringify({ cancelReason }),
-    });
+    }, { admin: true });
   },
 };
 
