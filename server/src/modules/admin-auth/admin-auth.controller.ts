@@ -4,14 +4,7 @@ import { AppErrorCode } from '../../common/errors/app-error-code';
 import { createAdminToken } from './admin-token';
 import { adminLoginSchema } from './dto/admin-auth.dto';
 import type { AdminLoginDto } from './dto/admin-auth.dto';
-
-function getAdminUsername() {
-  return process.env.ADMIN_USERNAME ?? 'YJMF';
-}
-
-function getAdminPassword() {
-  return process.env.ADMIN_PASSWORD ?? '123456';
-}
+import { getAdminPassword, getAdminUsername } from './admin-config';
 
 @Controller('admin-auth')
 export class AdminAuthController {

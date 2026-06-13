@@ -15,6 +15,11 @@ type ApiResponse = {
   } | null;
 };
 
+const TEST_ADMIN_USERNAME = 'test-admin';
+const TEST_ADMIN_PASSWORD = 'test-admin-password';
+const TEST_ADMIN_TOKEN_SECRET =
+  'test-admin-token-secret-with-enough-random-characters';
+
 describe('Appointments', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -54,6 +59,10 @@ describe('Appointments', () => {
   }
 
   beforeAll(async () => {
+    process.env.ADMIN_USERNAME = TEST_ADMIN_USERNAME;
+    process.env.ADMIN_PASSWORD = TEST_ADMIN_PASSWORD;
+    process.env.ADMIN_TOKEN_SECRET = TEST_ADMIN_TOKEN_SECRET;
+
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -65,9 +74,10 @@ describe('Appointments', () => {
     prisma = app.get<PrismaService>(PrismaService);
     const httpServer: unknown = app.getHttpServer();
     server = httpServer as Server;
-    const login = await request(server)
-      .post('/admin-auth/login')
-      .send({ username: 'YJMF', password: '123456' });
+    const login = await request(server).post('/admin-auth/login').send({
+      username: TEST_ADMIN_USERNAME,
+      password: TEST_ADMIN_PASSWORD,
+    });
     const loginBody = login.body as ApiResponse;
     const loginData = loginBody.data as { token: string };
     adminToken = loginData.token;
@@ -107,9 +117,10 @@ describe('Appointments', () => {
   });
 
   it('后台登录成功后返回访问令牌', async () => {
-    const response = await request(server)
-      .post('/admin-auth/login')
-      .send({ username: 'YJMF', password: '123456' });
+    const response = await request(server).post('/admin-auth/login').send({
+      username: TEST_ADMIN_USERNAME,
+      password: TEST_ADMIN_PASSWORD,
+    });
     const body = response.body as ApiResponse;
     const data = body.data as { token: string };
 
@@ -165,16 +176,20 @@ describe('Appointments', () => {
   });
 
   it('用户可以按手机号查询自己的预约订单', async () => {
-    await request(server).post('/appointments').send({
-      ...payload,
-      customerPhone: '13900000000',
-      startAt: '2099-06-12T10:00:00+08:00',
-    });
-    await request(server).post('/appointments').send({
-      ...payload,
-      customerPhone: '13900000001',
-      startAt: '2099-06-12T12:00:00+08:00',
-    });
+    await request(server)
+      .post('/appointments')
+      .send({
+        ...payload,
+        customerPhone: '13900000000',
+        startAt: '2099-06-12T10:00:00+08:00',
+      });
+    await request(server)
+      .post('/appointments')
+      .send({
+        ...payload,
+        customerPhone: '13900000001',
+        startAt: '2099-06-12T12:00:00+08:00',
+      });
 
     const response = await request(server)
       .get('/appointments')
@@ -191,10 +206,12 @@ describe('Appointments', () => {
   });
 
   it('商家取消预约时必须填写原因，并能被用户查到', async () => {
-    const created = await request(server).post('/appointments').send({
-      ...payload,
-      customerPhone: '13900000001',
-    });
+    const created = await request(server)
+      .post('/appointments')
+      .send({
+        ...payload,
+        customerPhone: '13900000001',
+      });
     const createdBody = created.body as ApiResponse;
     const appointment = createdBody.data as { id: number };
 

@@ -8,11 +8,37 @@ function getNextPath() {
   if (typeof window === 'undefined') {
     return '/admin';
   }
-  return new URLSearchParams(window.location.search).get('next') || '/admin';
+
+  const next = new URLSearchParams(window.location.search).get('next');
+
+  if (!next) {
+    return '/admin';
+  }
+
+  try {
+    const target = new URL(next, window.location.origin);
+
+    const isSameOrigin = target.origin === window.location.origin;
+    const isAdminPath =
+      target.pathname === '/admin' ||
+      target.pathname.startsWith('/admin/');
+
+    const isLoginPage =
+      target.pathname === '/admin/login' ||
+      target.pathname.startsWith('/admin/login/');
+
+    if (!isSameOrigin || !isAdminPath || isLoginPage) {
+      return '/admin';
+    }
+
+    return `${target.pathname}${target.search}${target.hash}`;
+  } catch {
+    return '/admin';
+  }
 }
 
 export function AdminLogin() {
-  const [username, setUsername] = useState('YJMF');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');

@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
-const phoneSchema = z.string().trim().regex(/^\d{11}$/, '手机号必须为 11 位数字');
+const phoneSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{11}$/, '手机号必须为 11 位数字');
 
 export const createAppointmentSchema = z.object({
   serviceItemId: z.number().int().positive(),
@@ -28,4 +31,6 @@ export const listAppointmentQuerySchema = z.object({
 
 export type CreateAppointmentDto = z.infer<typeof createAppointmentSchema>;
 export type CancelAppointmentDto = z.infer<typeof cancelAppointmentSchema>;
-export type ListAppointmentQueryDto = z.infer<typeof listAppointmentQuerySchema>;
+export type ListAppointmentQueryDto = z.infer<
+  typeof listAppointmentQuerySchema
+>;

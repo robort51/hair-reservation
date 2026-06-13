@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'crypto';
+import { getAdminTokenSecret } from './admin-config';
 
 const TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
 
@@ -7,16 +8,14 @@ type AdminTokenPayload = {
   exp: number;
 };
 
-function getTokenSecret() {
-  return process.env.ADMIN_TOKEN_SECRET ?? 'yjmf-dev-admin-secret';
-}
-
 function toBase64Url(value: string) {
   return Buffer.from(value).toString('base64url');
 }
 
 function sign(value: string) {
-  return createHmac('sha256', getTokenSecret()).update(value).digest('base64url');
+  return createHmac('sha256', getAdminTokenSecret())
+    .update(value)
+    .digest('base64url');
 }
 
 export function createAdminToken(username: string) {
