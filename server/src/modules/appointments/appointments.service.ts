@@ -15,14 +15,18 @@ import { PrismaService } from '../../prisma/prisma.service';
 import type {
   CancelAppointmentDto,
   CreateAppointmentDto,
+  ListAppointmentQueryDto,
 } from './dto/appointment.dto';
 
 @Injectable()
 export class AppointmentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  list() {
+  list(query: ListAppointmentQueryDto = {}) {
     return this.prisma.appointment.findMany({
+      where: query.customerPhone
+        ? { customerPhoneSnapshot: query.customerPhone }
+        : undefined,
       orderBy: { startAt: 'desc' },
     });
   }
@@ -77,6 +81,13 @@ export class AppointmentsService {
     }
 
     const startAt = new Date(dto.startAt);
+    if (startAt < new Date()) {
+      throw new ConflictException({
+        code: AppErrorCode.APPOINTMENT_TIME_PASSED,
+        message: '预约时间已过，请重新选择可预约时段',
+      });
+    }
+
     const endAt = addMinutes(startAt, service.durationMinutes);
     const date = dto.startAt.slice(0, 10);
     const dayOfWeek = this.toDayOfWeek(date);
@@ -145,7 +156,7 @@ export class AppointmentsService {
           customerPhoneSnapshot: customer.phone,
           serviceNameSnapshot: service.name,
           serviceDurationMinutesSnapshot: service.durationMinutes,
-          servicePriceCentsSnapshot: service.priceCents,
+          servicePriceCentsSnapshot: staffService.priceCents,
           staffNameSnapshot: staff.name,
           startAt,
           endAt,

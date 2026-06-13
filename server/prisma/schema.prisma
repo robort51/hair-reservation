@@ -60,6 +60,7 @@ model StaffService {
   id            Int         @id @default(autoincrement())
   staffId       Int
   serviceItemId Int
+  priceCents    Int
   sortOrder     Int         @default(0)
   createdAt     DateTime    @default(now())
   staff         Staff       @relation(fields: [staffId], references: [id], onDelete: Cascade)

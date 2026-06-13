@@ -44,29 +44,61 @@ async function main() {
     create: { id: 1, name: 'Tony', title: '资深发型师', phone: '13800000000' },
   });
 
+  const jam = await prisma.staff.upsert({
+    where: { id: 2 },
+    update: { name: 'Jam', title: '总监发型师', phone: '13800000001', isActive: true },
+    create: { id: 2, name: 'Jam', title: '总监发型师', phone: '13800000001' },
+  });
+
+  const staffPriceOffset: Record<number, number> = {
+    [staff.id]: 0,
+    [jam.id]: 3000,
+  };
+
   for (const service of services) {
-    await prisma.staffService.upsert({
-      where: {
-        staffId_serviceItemId: {
-          staffId: staff.id,
-          serviceItemId: service.sortOrder,
+    for (const stylist of [staff, jam]) {
+      await prisma.staffService.upsert({
+        where: {
+          staffId_serviceItemId: {
+            staffId: stylist.id,
+            serviceItemId: service.sortOrder,
+          },
         },
-      },
-      update: {},
-      create: {
-        staffId: staff.id,
-        serviceItemId: service.sortOrder,
-        sortOrder: service.sortOrder,
-      },
-    });
+        update: {
+          priceCents: service.priceCents + staffPriceOffset[stylist.id],
+        },
+        create: {
+          staffId: stylist.id,
+          serviceItemId: service.sortOrder,
+          priceCents: service.priceCents + staffPriceOffset[stylist.id],
+          sortOrder: service.sortOrder,
+        },
+      });
+    }
   }
 
-  for (let dayOfWeek = 1; dayOfWeek <= 7; dayOfWeek += 1) {
-    await prisma.staffWeeklySchedule.upsert({
-      where: { id: dayOfWeek },
-      update: { staffId: staff.id, dayOfWeek, startTime: '09:00', endTime: '18:00', isWorking: true },
-      create: { id: dayOfWeek, staffId: staff.id, dayOfWeek, startTime: '09:00', endTime: '18:00', isWorking: true },
-    });
+  for (const stylist of [staff, jam]) {
+    for (let dayOfWeek = 1; dayOfWeek <= 7; dayOfWeek += 1) {
+      const id = (stylist.id - 1) * 7 + dayOfWeek;
+      await prisma.staffWeeklySchedule.upsert({
+        where: { id },
+        update: {
+          staffId: stylist.id,
+          dayOfWeek,
+          startTime: '09:00',
+          endTime: '18:00',
+          isWorking: true,
+        },
+        create: {
+          id,
+          staffId: stylist.id,
+          dayOfWeek,
+          startTime: '09:00',
+          endTime: '18:00',
+          isWorking: true,
+        },
+      });
+    }
   }
 }
 

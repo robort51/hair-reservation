@@ -1,7 +1,16 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { ServiceCategoriesService } from './service-categories.service';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { ServiceCategoryDto, serviceCategorySchema } from './dto/service-category.dto';
+import { serviceCategorySchema } from './dto/service-category.dto';
+import type { ServiceCategoryDto } from './dto/service-category.dto';
 
 @Controller('service-categories')
 export class ServiceCategoriesController {
@@ -13,7 +22,10 @@ export class ServiceCategoriesController {
   }
 
   @Post()
-  create(@Body(new ZodValidationPipe(serviceCategorySchema)) body: ServiceCategoryDto) {
+  create(
+    @Body(new ZodValidationPipe(serviceCategorySchema))
+    body: ServiceCategoryDto,
+  ) {
     return this.service.create(body);
   }
 

@@ -9,7 +9,13 @@ export class ServiceItemsService {
 
   list() {
     return this.prisma.serviceItem.findMany({
-      include: { category: true },
+      include: {
+        category: true,
+        staffServices: {
+          include: { staff: true },
+          orderBy: [{ priceCents: 'asc' }, { id: 'asc' }],
+        },
+      },
       orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
     });
   }
@@ -37,7 +43,10 @@ export class ServiceItemsService {
   }
 
   updateStatus(id: number, isActive: boolean) {
-    return this.prisma.serviceItem.update({ where: { id }, data: { isActive } });
+    return this.prisma.serviceItem.update({
+      where: { id },
+      data: { isActive },
+    });
   }
 
   async remove(id: number) {

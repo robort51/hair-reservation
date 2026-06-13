@@ -1,11 +1,7 @@
 import { Body, Controller, Get, Param, Patch, Post, Put } from '@nestjs/common';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import {
-  StaffDto,
-  StaffServicesDto,
-  staffSchema,
-  staffServicesSchema,
-} from './dto/staff.dto';
+import { staffSchema, staffServicesSchema } from './dto/staff.dto';
+import type { StaffDto, StaffServicesDto } from './dto/staff.dto';
 import { StaffService } from './staff.service';
 
 @Controller('staff')
@@ -42,6 +38,6 @@ export class StaffController {
     @Param('id') id: string,
     @Body(new ZodValidationPipe(staffServicesSchema)) body: StaffServicesDto,
   ) {
-    return this.service.replaceServices(Number(id), body.serviceItemIds);
+    return this.service.replaceServices(Number(id), body);
   }
 }

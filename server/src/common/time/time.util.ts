@@ -4,6 +4,7 @@ type GenerateSlotsInput = {
   windowEnd: string;
   durationMinutes: number;
   stepMinutes: number;
+  minStartAt?: Date;
 };
 
 export type TimeSlot = {
@@ -47,10 +48,12 @@ export function generateSlots(input: GenerateSlotsInput): TimeSlot[] {
     addMinutes(startAt, input.durationMinutes) <= windowEnd;
     startAt = addMinutes(startAt, input.stepMinutes)
   ) {
-    slots.push({
-      startAt,
-      endAt: addMinutes(startAt, input.durationMinutes),
-    });
+    if (!input.minStartAt || startAt >= input.minStartAt) {
+      slots.push({
+        startAt,
+        endAt: addMinutes(startAt, input.durationMinutes),
+      });
+    }
   }
 
   return slots;

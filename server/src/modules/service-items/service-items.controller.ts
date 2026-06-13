@@ -1,6 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { ServiceItemDto, serviceItemSchema } from './dto/service-item.dto';
+import { serviceItemSchema } from './dto/service-item.dto';
+import type { ServiceItemDto } from './dto/service-item.dto';
 import { ServiceItemsService } from './service-items.service';
 
 @Controller('service-items')

@@ -1,12 +1,17 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Put,
+} from '@nestjs/common';
 import { SchedulesService } from './schedules.service';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import {
-  TimeOffDto,
-  WeeklyScheduleDto,
-  timeOffSchema,
-  weeklyScheduleSchema,
-} from './dto/schedule.dto';
+import { timeOffSchema, weeklyScheduleSchema } from './dto/schedule.dto';
+import type { TimeOffDto, WeeklyScheduleDto } from './dto/schedule.dto';
 
 @Controller()
 export class SchedulesController {

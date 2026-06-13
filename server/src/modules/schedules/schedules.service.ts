@@ -9,7 +9,7 @@ export class SchedulesService {
   listWeekly(staffId: number) {
     return this.prisma.staffWeeklySchedule.findMany({
       where: { staffId },
-      orderBy: { dayOfWeek: 'asc' },
+      orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
     });
   }
 
@@ -21,7 +21,7 @@ export class SchedulesService {
       });
       return tx.staffWeeklySchedule.findMany({
         where: { staffId },
-        orderBy: { dayOfWeek: 'asc' },
+        orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
       });
     });
   }

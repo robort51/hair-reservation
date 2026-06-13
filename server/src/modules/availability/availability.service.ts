@@ -1,8 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { AppointmentStatus } from '@prisma/client';
 import { AppErrorCode } from '../../common/errors/app-error-code';
-import { generateSlots, hasOverlap, toShanghaiDateTime } from '../../common/time/time.util';
+import {
+  generateSlots,
+  hasOverlap,
+  toShanghaiDateTime,
+} from '../../common/time/time.util';
 import { PrismaService } from '../../prisma/prisma.service';
+import type { StaffAvailability } from './availability.types';
 
 @Injectable()
 export class AvailabilityService {
@@ -28,9 +33,13 @@ export class AvailabilityService {
       orderBy: { id: 'asc' },
     });
 
-    const grouped = [];
+    const grouped: StaffAvailability[] = [];
     for (const staff of staffList) {
-      const slots = await this.getStaffSlots(staff.id, date, service.durationMinutes);
+      const slots = await this.getStaffSlots(
+        staff.id,
+        date,
+        service.durationMinutes,
+      );
       grouped.push({ staffId: staff.id, staffName: staff.name, slots });
     }
 
@@ -46,7 +55,11 @@ export class AvailabilityService {
     return { date, serviceItemId, staff: grouped };
   }
 
-  private async getStaffSlots(staffId: number, date: string, durationMinutes: number) {
+  private async getStaffSlots(
+    staffId: number,
+    date: string,
+    durationMinutes: number,
+  ) {
     const dayOfWeek = this.toDayOfWeek(date);
     const schedules = await this.prisma.staffWeeklySchedule.findMany({
       where: { staffId, dayOfWeek, isWorking: true },
@@ -65,6 +78,7 @@ export class AvailabilityService {
         windowEnd: schedule.endTime,
         durationMinutes,
         stepMinutes: 30,
+        minStartAt: new Date(),
       });
 
       return candidates.filter((slot) => {

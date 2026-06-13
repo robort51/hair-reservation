@@ -1,13 +1,15 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import {
   cancelAppointmentSchema,
   createAppointmentSchema,
+  listAppointmentQuerySchema,
 } from './dto/appointment.dto';
 import type {
   CancelAppointmentDto,
   CreateAppointmentDto,
+  ListAppointmentQueryDto,
 } from './dto/appointment.dto';
 
 @Controller('appointments')
@@ -15,8 +17,11 @@ export class AppointmentsController {
   constructor(private readonly service: AppointmentsService) {}
 
   @Get()
-  list() {
-    return this.service.list();
+  list(
+    @Query(new ZodValidationPipe(listAppointmentQuerySchema))
+    query: ListAppointmentQueryDto,
+  ) {
+    return this.service.list(query);
   }
 
   @Get(':id')
