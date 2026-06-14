@@ -19,7 +19,7 @@ type ScheduleDay = {
 };
 
 const dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-const defaultSegment = { startTime: '09:00', endTime: '18:00' };
+const defaultSegment = { startTime: '09:00', endTime: '22:00' };
 
 function createSegment(
   dayOfWeek: number,

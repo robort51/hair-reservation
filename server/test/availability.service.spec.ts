@@ -79,6 +79,23 @@ describe('time.util', () => {
     );
   });
 
+  it('支持默认营业时间延长到晚上 22 点', () => {
+    const slots = generateSlots({
+      date: '2026-06-12',
+      windowStart: '09:00',
+      windowEnd: '22:00',
+      durationMinutes: 60,
+      stepMinutes: 30,
+    });
+
+    expect(slots.map((slot) => slot.startAt)).toContainEqual(
+      new Date('2026-06-12T21:00:00+08:00'),
+    );
+    expect(slots.map((slot) => slot.startAt)).not.toContainEqual(
+      new Date('2026-06-12T21:30:00+08:00'),
+    );
+  });
+
   it('识别重叠时间段', () => {
     expect(
       hasOverlap(

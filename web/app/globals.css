@@ -405,6 +405,33 @@ button {
   font-weight: 500;
 }
 
+.working-staff-list {
+  display: grid;
+  gap: 10px;
+}
+
+.working-staff-item {
+  display: grid;
+  gap: 3px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid rgba(247, 241, 231, 0.18);
+}
+
+.working-staff-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.working-staff-item strong {
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.working-staff-item small {
+  color: rgba(247, 241, 231, 0.68);
+  font-size: 12px;
+}
+
 .home-services {
   display: grid;
   grid-template-columns: minmax(0, 0.82fr) minmax(320px, 1fr);

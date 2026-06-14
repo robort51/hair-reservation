@@ -40,6 +40,7 @@ describe('Appointments', () => {
     '13900000002',
     '1390000000',
   ];
+  const testStaffName = '测试在班员工';
 
   async function resetDemoStaffPrices() {
     const serviceItems = await prisma.serviceItem.findMany({
@@ -90,12 +91,14 @@ describe('Appointments', () => {
     await prisma.customer.deleteMany({
       where: { phone: { in: testPhones } },
     });
+    await prisma.staff.deleteMany({ where: { name: testStaffName } });
     await resetDemoStaffPrices();
     await app.close();
   });
 
   beforeEach(async () => {
     await resetDemoStaffPrices();
+    await prisma.staff.deleteMany({ where: { name: testStaffName } });
     await prisma.appointment.deleteMany({
       where: { customerPhoneSnapshot: { in: testPhones } },
     });
@@ -145,6 +148,47 @@ describe('Appointments', () => {
 
     expect(response.status).toBe(200);
     expect(body.error).toBeNull();
+  });
+
+  it('首页可公开查询指定日期在班员工', async () => {
+    const staff = await prisma.staff.create({
+      data: {
+        name: testStaffName,
+        title: '测试发型师',
+        isActive: true,
+        weeklySchedules: {
+          create: {
+            dayOfWeek: 5,
+            startTime: '13:00',
+            endTime: '22:00',
+            isWorking: true,
+          },
+        },
+      },
+    });
+
+    const response = await request(server)
+      .get('/schedules/today-working-staff')
+      .query({ date: '2026-06-12' });
+    const body = response.body as ApiResponse;
+    const data = body.data as {
+      date: string;
+      staff: Array<{
+        staffId: number;
+        staffName: string;
+        schedules: Array<{ startTime: string; endTime: string }>;
+      }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.error).toBeNull();
+    expect(data.date).toBe('2026-06-12');
+    expect(data.staff).toContainEqual({
+      staffId: staff.id,
+      staffName: testStaffName,
+      title: '测试发型师',
+      schedules: [{ startTime: '13:00', endTime: '22:00' }],
+    });
   });
 
   it('不能创建早于当前时间的预约', async () => {

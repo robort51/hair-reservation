@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { SchedulesService } from './schedules.service';
@@ -18,6 +19,11 @@ import { AdminAuthGuard } from '../admin-auth/admin-auth.guard';
 @Controller()
 export class SchedulesController {
   constructor(private readonly service: SchedulesService) {}
+
+  @Get('schedules/today-working-staff')
+  listTodayWorkingStaff(@Query('date') date?: string) {
+    return this.service.listTodayWorkingStaff(date);
+  }
 
   @Get('staff/:staffId/weekly-schedules')
   @UseGuards(AdminAuthGuard)

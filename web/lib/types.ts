@@ -107,6 +107,21 @@ export type WeeklySchedulePayload = {
   }>;
 };
 
+export type TodayWorkingStaff = {
+  staffId: number;
+  staffName: string;
+  title: string | null;
+  schedules: Array<{
+    startTime: string;
+    endTime: string;
+  }>;
+};
+
+export type TodayWorkingStaffResponse = {
+  date: string;
+  staff: TodayWorkingStaff[];
+};
+
 export type AvailabilitySlot = {
   startAt: string;
   endAt: string;

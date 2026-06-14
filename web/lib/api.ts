@@ -10,6 +10,7 @@ import type {
   Staff,
   StaffPayload,
   StaffServiceAssignmentPayload,
+  TodayWorkingStaffResponse,
   WeeklySchedule,
   WeeklySchedulePayload,
 } from './types';
@@ -156,6 +157,10 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(payload),
     }, { admin: true });
+  },
+
+  getTodayWorkingStaff() {
+    return request<TodayWorkingStaffResponse>('/schedules/today-working-staff');
   },
 
   getAvailability(params: {

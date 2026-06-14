@@ -114,7 +114,7 @@ async function ensureWeeklySchedules(staffId: number) {
       staffId,
       dayOfWeek: index + 1,
       startTime: '09:00',
-      endTime: '18:00',
+      endTime: '22:00',
       isWorking: true,
     })),
   });
