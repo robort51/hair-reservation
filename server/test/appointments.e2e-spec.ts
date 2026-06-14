@@ -41,6 +41,13 @@ describe('Appointments', () => {
     '1390000000',
   ];
   const testStaffName = '测试在班员工';
+  const fullTimeOffStaffName = '测试全天请假员工';
+  const partialTimeOffStaffName = '测试部分请假员工';
+  const testStaffNames = [
+    testStaffName,
+    fullTimeOffStaffName,
+    partialTimeOffStaffName,
+  ];
 
   async function resetDemoStaffPrices() {
     const serviceItems = await prisma.serviceItem.findMany({
@@ -91,14 +98,14 @@ describe('Appointments', () => {
     await prisma.customer.deleteMany({
       where: { phone: { in: testPhones } },
     });
-    await prisma.staff.deleteMany({ where: { name: testStaffName } });
+    await prisma.staff.deleteMany({ where: { name: { in: testStaffNames } } });
     await resetDemoStaffPrices();
     await app.close();
   });
 
   beforeEach(async () => {
     await resetDemoStaffPrices();
-    await prisma.staff.deleteMany({ where: { name: testStaffName } });
+    await prisma.staff.deleteMany({ where: { name: { in: testStaffNames } } });
     await prisma.appointment.deleteMany({
       where: { customerPhoneSnapshot: { in: testPhones } },
     });
@@ -188,6 +195,89 @@ describe('Appointments', () => {
       staffName: testStaffName,
       title: '测试发型师',
       schedules: [{ startTime: '13:00', endTime: '22:00' }],
+    });
+  });
+
+  it('在班员工接口拒绝无效日期', async () => {
+    const response = await request(server)
+      .get('/schedules/today-working-staff')
+      .query({ date: '2026-99-99' });
+    const body = response.body as ApiResponse;
+
+    expect(response.status).toBe(400);
+    expect(body.error?.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('首页今日在班排除全天请假员工并裁剪部分请假时间', async () => {
+    const fullTimeOffStaff = await prisma.staff.create({
+      data: {
+        name: fullTimeOffStaffName,
+        title: '全天请假发型师',
+        isActive: true,
+        weeklySchedules: {
+          create: {
+            dayOfWeek: 5,
+            startTime: '09:00',
+            endTime: '22:00',
+            isWorking: true,
+          },
+        },
+        timeOffs: {
+          create: {
+            startAt: new Date('2026-06-12T00:00:00+08:00'),
+            endAt: new Date('2026-06-13T00:00:00+08:00'),
+            reason: '全天请假',
+          },
+        },
+      },
+    });
+    const partialTimeOffStaff = await prisma.staff.create({
+      data: {
+        name: partialTimeOffStaffName,
+        title: '部分请假发型师',
+        isActive: true,
+        weeklySchedules: {
+          create: {
+            dayOfWeek: 5,
+            startTime: '09:00',
+            endTime: '22:00',
+            isWorking: true,
+          },
+        },
+        timeOffs: {
+          create: {
+            startAt: new Date('2026-06-12T11:00:00+08:00'),
+            endAt: new Date('2026-06-12T13:00:00+08:00'),
+            reason: '午间请假',
+          },
+        },
+      },
+    });
+
+    const response = await request(server)
+      .get('/schedules/today-working-staff')
+      .query({ date: '2026-06-12' });
+    const body = response.body as ApiResponse;
+    const data = body.data as {
+      staff: Array<{
+        staffId: number;
+        staffName: string;
+        schedules: Array<{ startTime: string; endTime: string }>;
+      }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(data.staff.map((staff) => staff.staffId)).not.toContain(
+      fullTimeOffStaff.id,
+    );
+    expect(data.staff).toContainEqual({
+      staffId: partialTimeOffStaff.id,
+      staffName: partialTimeOffStaffName,
+      title: '部分请假发型师',
+      schedules: [
+        { startTime: '09:00', endTime: '11:00' },
+        { startTime: '13:00', endTime: '22:00' },
+      ],
     });
   });
 

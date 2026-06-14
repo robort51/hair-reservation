@@ -1,7 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { TimeOffDto, WeeklyScheduleDto } from './dto/schedule.dto';
-import { toShanghaiDateTime } from '../../common/time/time.util';
+import type { TimeOffDto, WeeklyScheduleDto } from './dto/schedule.dto';
+import { addMinutes, toShanghaiDateTime } from '../../common/time/time.util';
+
+type ScheduleInterval = {
+  startTime: string;
+  endTime: string;
+};
+
+type DateInterval = {
+  startAt: Date;
+  endAt: Date;
+};
 
 @Injectable()
 export class SchedulesService {
@@ -9,6 +19,8 @@ export class SchedulesService {
 
   async listTodayWorkingStaff(date = this.getShanghaiDateKey()) {
     const dayOfWeek = this.toDayOfWeek(date);
+    const dayStart = toShanghaiDateTime(date, '00:00');
+    const dayEnd = addMinutes(dayStart, 24 * 60);
     const staffList = await this.prisma.staff.findMany({
       where: {
         isActive: true,
@@ -19,21 +31,36 @@ export class SchedulesService {
           where: { dayOfWeek, isWorking: true },
           orderBy: { startTime: 'asc' },
         },
+        timeOffs: {
+          where: {
+            startAt: { lt: dayEnd },
+            endAt: { gt: dayStart },
+          },
+          orderBy: { startAt: 'asc' },
+        },
       },
       orderBy: { id: 'asc' },
     });
 
     return {
       date,
-      staff: staffList.map((staff) => ({
-        staffId: staff.id,
-        staffName: staff.name,
-        title: staff.title,
-        schedules: staff.weeklySchedules.map((schedule) => ({
-          startTime: schedule.startTime,
-          endTime: schedule.endTime,
-        })),
-      })),
+      staff: staffList
+        .map((staff) => ({
+          staffId: staff.id,
+          staffName: staff.name,
+          title: staff.title,
+          schedules: staff.weeklySchedules.flatMap((schedule) =>
+            this.subtractTimeOffs(
+              date,
+              {
+                startTime: schedule.startTime,
+                endTime: schedule.endTime,
+              },
+              staff.timeOffs,
+            ),
+          ),
+        }))
+        .filter((staff) => staff.schedules.length > 0),
     };
   }
 
@@ -93,6 +120,72 @@ export class SchedulesService {
   private toDayOfWeek(date: string): number {
     const jsDay = toShanghaiDateTime(date, '00:00').getDay();
     return jsDay === 0 ? 7 : jsDay;
+  }
+
+  private subtractTimeOffs(
+    date: string,
+    schedule: ScheduleInterval,
+    timeOffs: DateInterval[],
+  ): ScheduleInterval[] {
+    let segments: DateInterval[] = [
+      {
+        startAt: toShanghaiDateTime(date, schedule.startTime),
+        endAt: toShanghaiDateTime(date, schedule.endTime),
+      },
+    ];
+
+    for (const timeOff of timeOffs) {
+      segments = segments.flatMap((segment) =>
+        this.subtractInterval(segment, timeOff),
+      );
+    }
+
+    return segments.map((segment) => ({
+      startTime: this.toShanghaiTimeKey(segment.startAt),
+      endTime: this.toShanghaiTimeKey(segment.endAt),
+    }));
+  }
+
+  private subtractInterval(
+    segment: DateInterval,
+    timeOff: DateInterval,
+  ): DateInterval[] {
+    if (timeOff.startAt >= segment.endAt || timeOff.endAt <= segment.startAt) {
+      return [segment];
+    }
+
+    const nextSegments: DateInterval[] = [];
+    if (timeOff.startAt > segment.startAt) {
+      nextSegments.push({
+        startAt: segment.startAt,
+        endAt: new Date(
+          Math.min(timeOff.startAt.getTime(), segment.endAt.getTime()),
+        ),
+      });
+    }
+    if (timeOff.endAt < segment.endAt) {
+      nextSegments.push({
+        startAt: new Date(
+          Math.max(timeOff.endAt.getTime(), segment.startAt.getTime()),
+        ),
+        endAt: segment.endAt,
+      });
+    }
+
+    return nextSegments.filter((item) => item.startAt < item.endAt);
+  }
+
+  private toShanghaiTimeKey(date: Date) {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Shanghai',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).formatToParts(date);
+
+    const hour = parts.find((part) => part.type === 'hour')?.value ?? '';
+    const minute = parts.find((part) => part.type === 'minute')?.value ?? '';
+    return `${hour}:${minute}`;
   }
 
   private getShanghaiDateKey() {

@@ -12,8 +12,16 @@ import {
 } from '@nestjs/common';
 import { SchedulesService } from './schedules.service';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { timeOffSchema, weeklyScheduleSchema } from './dto/schedule.dto';
-import type { TimeOffDto, WeeklyScheduleDto } from './dto/schedule.dto';
+import {
+  timeOffSchema,
+  todayWorkingStaffQuerySchema,
+  weeklyScheduleSchema,
+} from './dto/schedule.dto';
+import type {
+  TimeOffDto,
+  TodayWorkingStaffQueryDto,
+  WeeklyScheduleDto,
+} from './dto/schedule.dto';
 import { AdminAuthGuard } from '../admin-auth/admin-auth.guard';
 
 @Controller()
@@ -21,8 +29,11 @@ export class SchedulesController {
   constructor(private readonly service: SchedulesService) {}
 
   @Get('schedules/today-working-staff')
-  listTodayWorkingStaff(@Query('date') date?: string) {
-    return this.service.listTodayWorkingStaff(date);
+  listTodayWorkingStaff(
+    @Query(new ZodValidationPipe(todayWorkingStaffQuerySchema))
+    query: TodayWorkingStaffQueryDto,
+  ) {
+    return this.service.listTodayWorkingStaff(query.date);
   }
 
   @Get('staff/:staffId/weekly-schedules')
